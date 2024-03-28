@@ -16,7 +16,7 @@ parser.add_argument('--dataset', default='fcvid', choices=['fcvid', 'minikinetic
 parser.add_argument('--dataset_root', default='/home/dimidask/Projects/FCVID', help='dataset root directory')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
-parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
+parser.add_argument('--num_workers', type=int, default=2, help='number of workers for data loader') # change
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
