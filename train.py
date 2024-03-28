@@ -92,8 +92,8 @@ def main():
         t1 = time.perf_counter()
 
         if (epoch + 1) % args.save_interval == 0:
-            sfnametmpl = 'model-{}-{:03d}.pt'
-            sfname = sfnametmpl.format(args.dataset, epoch + 1)
+            sfnametmpl = 'model-cufed-{:03d}.pt' # change
+            sfname = sfnametmpl.format(epoch + 1) # change
             spth = os.path.join(args.save_folder, sfname)
             torch.save({
                 'epoch': epoch + 1,
