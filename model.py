@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-import pdb
 
 class GCNLayer(nn.Module):
     def __init__(self, in_feats, out_feats):
@@ -33,7 +32,6 @@ class GraphModule(nn.Module):
         self.gcn = nn.ModuleList(layers)
 
     def forward(self, x, device, get_adj=False):
-        pdb.set_trace()
         qx = self.wq(x)
         kx = self.wk(x)
         dot_mat = qx.matmul(kx.transpose(-1, -2))
