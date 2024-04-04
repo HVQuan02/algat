@@ -94,14 +94,14 @@ def main():
         epoch_cnt = epoch + 1
         if epoch_cnt >= 120 and (epoch_cnt < 130 or epoch_cnt % args.save_interval == 0):
             sfnametmpl = 'model-cufed-{:03d}.pt' # change
-            sfname = sfnametmpl.format(epoch_cnt) # change
+            sfname = sfnametmpl.format(epoch_cnt)
             spth = os.path.join(args.save_folder, sfname)
             torch.save({
                 'epoch': epoch_cnt,
                 'loss': loss,
                 'model_state_dict': model.state_dict(),
-                # 'opt_state_dict': opt.state_dict(),
-                # 'sched_state_dict': sched.state_dict()
+                'opt_state_dict': opt.state_dict(),
+                'sched_state_dict': sched.state_dict()
             }, spth)
         if args.verbose:
             print("[epoch {}] loss={} dt={:.2f}sec".format(epoch_cnt, loss, t1 - t0))
