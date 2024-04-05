@@ -92,7 +92,7 @@ def main():
         t1 = time.perf_counter()
 
         epoch_cnt = epoch + 1
-        if epoch_cnt >= 120 and (epoch_cnt < 130 or epoch_cnt % args.save_interval == 0):
+        if epoch_cnt >= 120 and (epoch_cnt >= 190 or epoch_cnt % args.save_interval == 0): # change
             sfnametmpl = 'model-cufed-{:03d}.pt' # change
             sfname = sfnametmpl.format(epoch_cnt)
             spth = os.path.join(args.save_folder, sfname)
