@@ -18,7 +18,7 @@ parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn lay
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
-parser.add_argument('--split_dir', default='/kaggle/input/full-split', help='train split and val split')
+parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
 parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')
 parser.add_argument('--num_epochs', type=int, default=200, help='number of epochs to train')
@@ -161,10 +161,10 @@ def main():
         }
 
         if is_save_ckpt:
-            torch.save(model_config, os.path.join(args.save_folder, 'ViGAT-{}.pt'.format(args.dataset)))
+            torch.save(model_config, os.path.join(args.save_folder, 'best-ViGAT-{}.pt'.format(args.dataset)))
 
         if is_early_stopping or epoch_cnt == args.num_epochs:
-            torch.save(model_config, os.path.join(args.save_folder, 'ViGAT-{}-last.pt'.format(args.dataset)))
+            torch.save(model_config, os.path.join(args.save_folder, 'last-ViGAT-{}.pt'.format(args.dataset)))
             print('Stop at epoch {}'.format(epoch_cnt)) 
             break
 

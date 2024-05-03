@@ -14,7 +14,7 @@ parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn lay
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
-parser.add_argument('--split_dir', default='/kaggle/input/full-split', help='train split and val split')
+parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=2, help='number of workers for data loader')
