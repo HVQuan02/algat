@@ -3,10 +3,9 @@ import time
 import torch
 import sys
 from torch.utils.data import DataLoader
-from sklearn.metrics import average_precision_score, accuracy_score
-import numpy as np
 
-from datasets import FCVID, miniKINETICS, ACTNET
+from datasets import ACTNET
+from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Video Classification')
@@ -16,11 +15,12 @@ parser.add_argument('--dataset', default='fcvid', choices=['fcvid', 'minikinetic
 parser.add_argument('--dataset_root', default='/home/dimidask/Projects/FCVID', help='dataset root directory')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
-parser.add_argument('--num_workers', type=int, default=2, help='number of workers for data loader') # change
+parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader') # change
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
+parser.add_argument('--metric', default='map', choices=['map', 'accuracy'])
 args = parser.parse_args()
 
 
@@ -50,14 +50,11 @@ def evaluate(model, dataset, loader, scores, out_file, device):
 
 
 def main():
-    if args.dataset == 'fcvid':
-        dataset = FCVID(args.dataset_root, is_train=False, ext_method=args.ext_method)
-    elif args.dataset == 'actnet':
+    if args.dataset == 'actnet':
         dataset = ACTNET(args.dataset_root, is_train=False, ext_method=args.ext_method)
-    elif args.dataset == 'minikinetics':
-        dataset = miniKINETICS(args.dataset_root, is_train=False, ext_method=args.ext_method)
     else:
         sys.exit("Unknown dataset!")
+
     device = torch.device('cuda:0')
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
@@ -87,17 +84,9 @@ def main():
     if args.save_scores:
         out_file.close()
 
-    if args.dataset == 'fcvid':
-        ap = average_precision_score(dataset.labels, scores)
+    if args.metric == 'map':
+        ap = AP_partial(dataset.labels, scores)[1]
         print('top1={:.2f}% dt={:.2f}sec'.format(100 * ap, t1 - t0))
-    elif args.dataset == 'actnet':
-        ap = average_precision_score(dataset.labels, scores)
-        print('top1={:.2f}% dt={:.2f}sec'.format(100 * ap, t1 - t0))
-    elif args.dataset == 'minikinetics':
-        top1 = top_k_accuracy_score(dataset.labels, scores, k=1)
-        top5 = top_k_accuracy_score(dataset.labels, scores, k=5)
-        print('top1 = {:.2f}%, top5 = {:.2f}% dt = {:.2f}sec'.format(100 * top1, 100 * top5, t1 - t0))
-
 
 if __name__ == '__main__':
     main()
