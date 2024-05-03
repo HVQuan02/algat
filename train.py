@@ -18,6 +18,7 @@ parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn lay
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
+parser.add_argument('--split_dir', default='/kaggle/input/full-split', help='train split and val split')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
 parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')
 parser.add_argument('--num_epochs', type=int, default=200, help='number of epochs to train')
@@ -106,8 +107,8 @@ def main():
         os.mkdir(args.save_folder)
 
     if args.dataset == 'cufed':
-        dataset = CUFED(args.dataset_root, is_train=True, ext_method=args.ext_method, feats_dir=args.feats_dir)
-        val_dataset = CUFED(args.dataset_root, is_train=False, ext_method=args.ext_method, feats_dir=args.feats_dir)
+        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, ext_method=args.ext_method)
+        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False, ext_method=args.ext_method)
     else:
         sys.exit("Unknown dataset!")
 

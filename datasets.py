@@ -15,7 +15,7 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, is_train, ext_method, feats_dir):
+    def __init__(self, root_dir, feats_dir, split_dir, is_train, ext_method):
         self.root_dir = root_dir
         self.feats_dir = feats_dir
         self.phase = 'train' if is_train else 'test'
@@ -31,9 +31,9 @@ class CUFED(Dataset):
             sys.exit("Unknown Extractor")
 
         if self.phase == 'train':
-            split_path = os.path.join(root_dir, 'train_split.txt')
+            split_path = os.path.join(split_dir, 'train_split.txt')
         else:
-            split_path = os.path.join(root_dir, 'val_split.txt')
+            split_path = os.path.join(split_dir, 'val_split.txt')
 
         vidname_list = []
         label_path = os.path.join(root_dir, "event_type.json")
