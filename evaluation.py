@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('model', nargs=1, help='trained model')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
-parser.add_argument('--dataset_root', default='/home/dimidask/Projects/FCVID', help='dataset root directory')
+parser.add_argument('--dataset_root', default='/content/drive/MyDrive/CUFED-Event-Image/CUFED', help='dataset root directory')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
@@ -47,7 +47,6 @@ def evaluate(model, dataset, loader, scores, out_file, device):
 
             scores[gidx:gidx+shape, :] = out_data.cpu()
             gidx += shape
-
 
 def main():
     if args.dataset == 'cufed':
@@ -86,7 +85,7 @@ def main():
 
     if args.metric == 'map':
         ap = AP_partial(dataset.labels, scores)[1]
-        print('top1={:.2f}% dt={:.2f}sec'.format(100 * ap, t1 - t0))
+        print('top1={:.2f}% dt={:.2f}sec'.format(ap, t1 - t0))
 
 if __name__ == '__main__':
     main()

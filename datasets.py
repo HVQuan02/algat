@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from torch.utils.data import Dataset
 
-class ACTNET(Dataset):
+class CUFED(Dataset):
     NUM_CLASS = 23
     NUM_FRAMES = 30
     NUM_BOXES = 50
