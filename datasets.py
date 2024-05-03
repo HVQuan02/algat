@@ -60,12 +60,9 @@ class CUFED(Dataset):
 
     def __getitem__(self, idx):
         name = self.videos[idx]
-        # name, _ = os.path.splitext(name)
-
-        feats_path = os.path.join(self.root_dir, self.local_folder, name + '.npy')  #
-        global_path = os.path.join(self.root_dir, self.global_folder, name + '.npy')  #
+        feats_path = os.path.join(self.root_dir, self.local_folder, name + '.npy')
+        global_path = os.path.join(self.root_dir, self.global_folder, name + '.npy')
         feats = np.load(feats_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
-
         return feats, feat_global, label, name
