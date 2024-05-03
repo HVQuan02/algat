@@ -4,7 +4,7 @@ import torch
 import sys
 from torch.utils.data import DataLoader
 
-from datasets import ACTNET
+from datasets import CUFED
 from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
@@ -15,7 +15,7 @@ parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'c
 parser.add_argument('--dataset_root', default='/content/drive/MyDrive/CUFED-Event-Image/CUFED', help='dataset root directory')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
-parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
+parser.add_argument('--num_workers', type=int, default=2, help='number of workers for data loader')
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
@@ -50,7 +50,7 @@ def evaluate(model, dataset, loader, scores, out_file, device):
 
 def main():
     if args.dataset == 'cufed':
-        dataset = ACTNET(args.dataset_root, is_train=False, ext_method=args.ext_method)
+        dataset = CUFED(args.dataset_root, is_train=False, ext_method=args.ext_method)
     else:
         sys.exit("Unknown dataset!")
 
