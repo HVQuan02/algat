@@ -15,8 +15,9 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, is_train, ext_method):
+    def __init__(self, root_dir, is_train, ext_method, feats_dir):
         self.root_dir = root_dir
+        self.feats_dir = feats_dir
         self.phase = 'train' if is_train else 'test'
         if ext_method == 'VIT':
             self.local_folder = 'vit_local'
@@ -60,8 +61,8 @@ class CUFED(Dataset):
 
     def __getitem__(self, idx):
         name = self.videos[idx]
-        feats_path = os.path.join(self.root_dir, self.local_folder, name + '.npy')
-        global_path = os.path.join(self.root_dir, self.global_folder, name + '.npy')
+        feats_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
+        global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
         feats = np.load(feats_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]

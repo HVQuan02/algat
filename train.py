@@ -16,11 +16,12 @@ parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', default=2024, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
-parser.add_argument('--dataset_root', default='/content/drive/MyDrive/CUFED-Event-Image/CUFED', help='dataset root directory')
+parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
+parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
 parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')
 parser.add_argument('--num_epochs', type=int, default=200, help='number of epochs to train')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+parser.add_argument('--batch_size', type=int, default=64, help='batch size') # change
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
@@ -105,8 +106,8 @@ def main():
         os.mkdir(args.save_folder)
 
     if args.dataset == 'cufed':
-        dataset = CUFED(args.dataset_root, is_train=True, ext_method=args.ext_method)
-        val_dataset = CUFED(args.dataset_root, is_train=False, ext_method=args.ext_method)
+        dataset = CUFED(args.dataset_root, is_train=True, ext_method=args.ext_method, feats_dir=args.feats_dir)
+        val_dataset = CUFED(args.dataset_root, is_train=False, ext_method=args.ext_method, feats_dir=args.feats_dir)
     else:
         sys.exit("Unknown dataset!")
 
