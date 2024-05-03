@@ -8,19 +8,19 @@ from datasets import ACTNET
 from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
-parser = argparse.ArgumentParser(description='GCN Video Classification')
+parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('model', nargs=1, help='trained model')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
-parser.add_argument('--dataset', default='fcvid', choices=['fcvid', 'minikinetics', 'actnet'])
+parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/home/dimidask/Projects/FCVID', help='dataset root directory')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
-parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader') # change
+parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
-parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 parser.add_argument('--metric', default='map', choices=['map', 'accuracy'])
+parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
 
@@ -50,7 +50,7 @@ def evaluate(model, dataset, loader, scores, out_file, device):
 
 
 def main():
-    if args.dataset == 'actnet':
+    if args.dataset == 'cufed':
         dataset = ACTNET(args.dataset_root, is_train=False, ext_method=args.ext_method)
     else:
         sys.exit("Unknown dataset!")
