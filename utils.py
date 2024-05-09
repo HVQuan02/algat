@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 epsilon = 1e-8
 
@@ -70,3 +71,20 @@ def AP_partial(targs, preds):
     map_macro = 100 * np.sum(ap_valid * n_per_class / n_total)
 
     return ap, map, map_macro, cnt_class_with_no_labels, cnt_class_with_no_neg, cnt_class_with_no_pos
+
+def rankmin(x):
+  rank = torch.arange(x.shape[1]).type(x.dtype).to(x.device)
+  ranks = torch.zeros_like(x).to(x.device)
+  for i in range(x.shape[0]):
+    tmp = x[i].argsort()
+    ranks[i, tmp] = rank
+  return ranks
+
+def spearman_correlation(x, y):
+    x_rank = rankmin(x)
+    y_rank = rankmin(y)
+    
+    n = x.size(1)
+    upper = 6 * torch.sum((x_rank - y_rank).pow(2), dim=1)
+    down = n * (n ** 2 - 1.0)
+    return torch.mean(1.0 - (upper / down)).item()

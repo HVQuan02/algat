@@ -160,12 +160,13 @@ def main():
             'sched_state_dict': sched.state_dict()
         }
 
+        torch.save(model_config, os.path.join(args.save_folder, 'last-ViGAT-{}.pt'.format(args.dataset)))
+
         if is_save_ckpt:
             torch.save(model_config, os.path.join(args.save_folder, 'best-ViGAT-{}.pt'.format(args.dataset)))
 
-        if is_early_stopping or epoch_cnt == args.num_epochs:
-            torch.save(model_config, os.path.join(args.save_folder, 'last-ViGAT-{}.pt'.format(args.dataset)))
-            print('Stop at epoch {}'.format(epoch_cnt)) 
+        if is_early_stopping:
+            print('Early stop at epoch {}'.format(epoch_cnt)) 
             break
 
         if args.verbose:
