@@ -5,7 +5,7 @@ import sys
 from torch.utils.data import DataLoader
 
 from datasets import CUFED
-from utils import AP_partial
+from utils import AP_partial, spearman_correlation
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
@@ -21,12 +21,11 @@ parser.add_argument('--num_workers', type=int, default=2, help='number of worker
 parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
-parser.add_argument('--metric', default='map', choices=['map', 'accuracy'])
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
-
 def evaluate(model, dataset, loader, scores, out_file, device):
+    scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
     model.eval()
     with torch.no_grad():
@@ -49,6 +48,10 @@ def evaluate(model, dataset, loader, scores, out_file, device):
 
             scores[gidx:gidx+shape, :] = out_data.cpu()
             gidx += shape
+    # Change tensors to 1d-arrays
+    scores = scores.numpy()
+    map = AP_partial(dataset.labels, scores)[1]
+    return map
 
 def main():
     if args.dataset == 'cufed':
@@ -72,22 +75,14 @@ def main():
     if args.save_scores:
         out_file = open(args.save_path, 'w')
 
-    num_test = len(dataset)
-    scores = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
-
     t0 = time.perf_counter()
-    evaluate(model, dataset, loader, scores, out_file, device)
+    map = evaluate(model, dataset, loader, out_file, device)
     t1 = time.perf_counter()
-
-    # Change tensors to 1d-arrays
-    scores = scores.numpy()
 
     if args.save_scores:
         out_file.close()
 
-    if args.metric == 'map':
-        ap = AP_partial(dataset.labels, scores)[1]
-        print('top1={:.2f}% dt={:.2f}sec'.format(ap, t1 - t0))
+    print('map={:.2f} dt={:.2f}sec'.format(map, t1 - t0))
 
 if __name__ == '__main__':
     main()
