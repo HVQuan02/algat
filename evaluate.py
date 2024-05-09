@@ -24,7 +24,7 @@ parser.add_argument('--save_path', default='scores.txt', help='output path')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
-def evaluate(model, dataset, loader, scores, out_file, device):
+def evaluate(model, dataset, loader, out_file, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
     model.eval()
@@ -35,7 +35,7 @@ def evaluate(model, dataset, loader, scores, out_file, device):
             # Run model with all frames
             feats = feats.to(device)
             feat_global = feat_global.to(device)
-            out_data = model(feats, feat_global, device)
+            out_data, wids_objects, wids_frame_local, wids_frame_global = model(feats, feat_global, device, get_adj=True)
 
             shape = out_data.shape[0]
 
