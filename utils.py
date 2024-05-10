@@ -88,3 +88,28 @@ def spearman_correlation(x, y):
     upper = 6 * torch.sum((x_rank - y_rank).pow(2), dim=1)
     down = n * (n ** 2 - 1.0)
     return torch.mean(1.0 - (upper / down)).item()
+
+def cov(m):
+    m = m.type(torch.double)  # uncomment this line if desired
+    fact = 1.0 / (m.shape[-1] - 1)  # 1 / N
+    m -= torch.mean(m, dim=(1, 2), keepdim=True)
+    mt = torch.transpose(m, 1, 2)  # if complex: mt = m.t().conj()
+    return fact * m.matmul(mt).squeeze()
+
+def corrcoef(x, y):
+    batch_size = x.shape[0]
+    x = torch.stack((x, y), 1)
+    # calculate covariance matrix of rows
+    c = cov(x)
+    # normalize covariance matrix
+    d = torch.diagonal(c, dim1=1, dim2=2)
+    stddev = torch.pow(d, 0.5)
+    stddev = stddev.repeat(1, 2).view(batch_size, 2, 2)
+    c = c.div(stddev)
+    c = c.div(torch.transpose(stddev, 1, 2))
+    return c[:, 1, 0]
+
+def compute_rank_correlation(x, y):
+    x, y = rankmin(x), rankmin(y)
+    cor_batch = corrcoef(x, y)
+    return torch.mean(cor_batch).item()
