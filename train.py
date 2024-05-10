@@ -59,7 +59,7 @@ class EarlyStopper:
 def train(model, loader, crit, opt, sched, device):
     epoch_loss = 0
     for i, batch in enumerate(loader):
-        feats, feat_global, label, _ = batch
+        feats, feat_global, label, _, _ = batch
 
         feats = feats.to(device)
         feat_global = feat_global.to(device)
@@ -82,7 +82,7 @@ def validate(model, dataset, loader, device):
     model.eval()
     with torch.no_grad():
         for batch in loader:
-            feats, feat_global, _, _ = batch
+            feats, feat_global, _, _, _ = batch
 
             # Run model with all frames
             feats = feats.to(device)

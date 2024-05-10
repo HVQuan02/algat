@@ -30,12 +30,14 @@ def evaluate(model, dataset, loader, out_file, device):
     model.eval()
     with torch.no_grad():
         for i, batch in enumerate(loader):
-            feats, feat_global, _, _ = batch
+            feats, feat_global, _, _, importances = batch
+            print('importance shape: ', importances.shape)
 
             # Run model with all frames
             feats = feats.to(device)
             feat_global = feat_global.to(device)
             out_data, wids_objects, wids_frame_local, wids_frame_global = model(feats, feat_global, device, get_adj=True)
+            print('wid shape: ', wids_frame_global)
 
             shape = out_data.shape[0]
 

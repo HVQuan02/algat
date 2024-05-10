@@ -4,6 +4,15 @@ import sys
 import numpy as np
 from torch.utils.data import Dataset
 
+def get_album_importance(album_imgs, album_importance):
+    img_score_dict = {}
+    for _, image, score in album_importance:
+        img_score_dict[image] = score
+    importances = np.zeros(len(album_imgs))
+    for i, image in enumerate(album_imgs):
+        importances[i] = img_score_dict[image]
+    return importances
+
 class CUFED(Dataset):
     NUM_CLASS = 23
     NUM_FRAMES = 30
@@ -40,6 +49,14 @@ class CUFED(Dataset):
         with open(label_path, 'r') as f:
           album_data = json.load(f)
 
+        importance_path = os.path.join(root_dir, "image_importance.json")
+        with open(importance_path, 'r') as f:
+            album_importance = json.load(f)
+
+        album_imgs_path = os.path.join(split_dir, "album_imgs.json")
+        with open(album_imgs_path, 'r') as f:
+            album_imgs = json.load(f)
+
         with open(split_path, 'r') as f:
             album_names = f.readlines()
         vidname_list = [name.strip() for name in album_names]
@@ -52,6 +69,8 @@ class CUFED(Dataset):
                 labels_np[i, idx] = 1
 
         self.labels = labels_np
+        self.importance = album_importance
+        self.album_imgs = album_imgs
         self.videos = vidname_list
 
         self.num_missing = 0  # no missing videos by default!!
@@ -61,9 +80,12 @@ class CUFED(Dataset):
 
     def __getitem__(self, idx):
         name = self.videos[idx]
+        album_importance = self.importance[self.videos[idx]]
+        album_imgs = self.album_imgs[self.videos[idx]]
+        importances = get_album_importance(album_imgs, album_importance)
         feats_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
         global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
         feats = np.load(feats_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
-        return feats, feat_global, label, name
+        return feats, feat_global, label, name, importances
