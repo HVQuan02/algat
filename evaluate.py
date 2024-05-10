@@ -28,16 +28,17 @@ def evaluate(model, dataset, loader, out_file, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
     model.eval()
+    importance_list = []
+    wid_global_list = []
+    wid_local_list = []
     with torch.no_grad():
         for i, batch in enumerate(loader):
-            feats, feat_global, _, _, importances = batch
-            print('importance shape: ', importances.shape)
+            feats, feat_global, _, importances = batch
 
             # Run model with all frames
             feats = feats.to(device)
             feat_global = feat_global.to(device)
             out_data, wids_objects, wids_frame_local, wids_frame_global = model(feats, feat_global, device, get_adj=True)
-            print('wid shape: ', wids_frame_global)
 
             shape = out_data.shape[0]
 
@@ -50,10 +51,21 @@ def evaluate(model, dataset, loader, out_file, device):
 
             scores[gidx:gidx+shape, :] = out_data.cpu()
             gidx += shape
+            importance_list.append(importances)
+            wid_global_list.append(torch.from_numpy(wids_frame_global))
+            wid_local_list.append(torch.from_numpy(wids_frame_local))
+    
     # Change tensors to 1d-arrays
     scores = scores.numpy()
     map = AP_partial(dataset.labels, scores)[1]
-    return map
+    
+    importance_matrix = torch.cat(importance_list).to(device)
+    wid_global_matrix = torch.cat(wid_global_list).to(device)
+    wid_local_matrix = torch.cat(wid_local_list).to(device)
+    spearman_global = spearman_correlation(wid_global_matrix, importance_matrix)
+    spearman_local = spearman_correlation(wid_local_matrix, importance_matrix)
+
+    return map, spearman_global, spearman_local
 
 def main():
     if args.dataset == 'cufed':
@@ -66,8 +78,8 @@ def main():
 
     if args.verbose:
         print("running on {}".format(device))
-        print("num samples={}".format(len(dataset)))
-        print("missing videos={}".format(dataset.num_missing))
+        print("num of test set = {}".format(len(dataset)))
+        print("missing videos = {}".format(dataset.num_missing))
 
     model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
     data = torch.load(args.model[0])
@@ -78,13 +90,13 @@ def main():
         out_file = open(args.save_path, 'w')
 
     t0 = time.perf_counter()
-    map = evaluate(model, dataset, loader, out_file, device)
+    map, spearman_global, spearman_local = evaluate(model, dataset, loader, out_file, device)
     t1 = time.perf_counter()
 
     if args.save_scores:
         out_file.close()
 
-    print('map={:.2f} dt={:.2f}sec'.format(map, t1 - t0))
+    print('map={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, spearman_global, spearman_local, t1 - t0))
 
 if __name__ == '__main__':
     main()

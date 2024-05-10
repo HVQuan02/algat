@@ -59,7 +59,7 @@ class EarlyStopper:
 def train(model, loader, crit, opt, sched, device):
     epoch_loss = 0
     for i, batch in enumerate(loader):
-        feats, feat_global, label, _, _ = batch
+        feats, feat_global, label = batch
 
         feats = feats.to(device)
         feat_global = feat_global.to(device)
@@ -82,7 +82,7 @@ def validate(model, dataset, loader, device):
     model.eval()
     with torch.no_grad():
         for batch in loader:
-            feats, feat_global, _, _, _ = batch
+            feats, feat_global, _ = batch
 
             # Run model with all frames
             feats = feats.to(device)
@@ -108,7 +108,7 @@ def main():
 
     if args.dataset == 'cufed':
         dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, ext_method=args.ext_method)
-        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False, ext_method=args.ext_method)
+        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, is_val=True, ext_method=args.ext_method)
     else:
         sys.exit("Unknown dataset!")
 

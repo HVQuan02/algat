@@ -24,10 +24,18 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, feats_dir, split_dir, is_train, ext_method):
+    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False, ext_method= 'VIT'):
         self.root_dir = root_dir
         self.feats_dir = feats_dir
-        self.phase = 'train' if is_train else 'test'
+        
+        if is_train:
+            if is_val:
+                self.phase = 'val'
+            else:
+                self.phase = 'train'
+        else:
+            self.phase = 'test'
+            
         if ext_method == 'VIT':
             self.local_folder = 'vit_local'
             self.global_folder = 'vit_global'
@@ -49,13 +57,17 @@ class CUFED(Dataset):
         with open(label_path, 'r') as f:
           album_data = json.load(f)
 
-        importance_path = os.path.join(root_dir, "image_importance.json")
-        with open(importance_path, 'r') as f:
-            album_importance = json.load(f)
+        if self.phase == 'test':
+            importance_path = os.path.join(root_dir, "image_importance.json")
+            with open(importance_path, 'r') as f:
+                album_importance = json.load(f)
 
-        album_imgs_path = os.path.join(split_dir, "album_imgs.json")
-        with open(album_imgs_path, 'r') as f:
-            album_imgs = json.load(f)
+            album_imgs_path = os.path.join(split_dir, "album_imgs.json")
+            with open(album_imgs_path, 'r') as f:
+                album_imgs = json.load(f)
+                
+            self.importance = album_importance
+            self.album_imgs = album_imgs
 
         with open(split_path, 'r') as f:
             album_names = f.readlines()
@@ -69,8 +81,6 @@ class CUFED(Dataset):
                 labels_np[i, idx] = 1
 
         self.labels = labels_np
-        self.importance = album_importance
-        self.album_imgs = album_imgs
         self.videos = vidname_list
 
         self.num_missing = 0  # no missing videos by default!!
@@ -80,12 +90,14 @@ class CUFED(Dataset):
 
     def __getitem__(self, idx):
         name = self.videos[idx]
-        album_importance = self.importance[self.videos[idx]]
-        album_imgs = self.album_imgs[self.videos[idx]]
-        importances = get_album_importance(album_imgs, album_importance)
         feats_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
         global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
         feats = np.load(feats_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
-        return feats, feat_global, label, name, importances
+        if self.phase == 'test':
+            album_importance = self.importance[name]
+            album_imgs = self.album_imgs[name]
+            importances = get_album_importance(album_imgs, album_importance)
+            return feats, feat_global, label, importances
+        return feats, feat_global, label
