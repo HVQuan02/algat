@@ -17,7 +17,7 @@ parser.add_argument('--seed', type=int, default=2024, help='seed for randomness'
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
-parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
+parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats-bb', help='global and local features directory')
 parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
 parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')

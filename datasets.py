@@ -24,7 +24,7 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False, ext_method= 'VIT'):
+    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False, ext_method='VIT'):
         self.root_dir = root_dir
         self.feats_dir = feats_dir
         
