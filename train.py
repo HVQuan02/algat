@@ -13,7 +13,7 @@ from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
-parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
+# parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
@@ -99,9 +99,9 @@ def validate(model, dataset, loader, device):
     return ap
 
 def main():
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
+    # np.random.seed(args.seed)
+    # torch.manual_seed(args.seed)
+    # torch.cuda.manual_seed(args.seed)
 
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
