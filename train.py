@@ -95,8 +95,8 @@ def validate(model, dataset, loader, device):
             gidx += shape
     # Change tensors to 1d-arrays
     scores = scores.numpy()
-    ap = AP_partial(dataset.labels, scores)[1]
-    return ap
+    map_macro = AP_partial(dataset.labels, scores)[2]
+    return map_macro
 
 def main():
     # np.random.seed(args.seed)
