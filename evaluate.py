@@ -8,12 +8,10 @@ from torch.utils.data import DataLoader
 from datasets import CUFED
 from utils import AP_partial, spearman_correlation
 from model import ModelGCNConcAfter as Model
-from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', type=int, help='seed for randomness')
 parser.add_argument('model', nargs=1, help='trained model')
-parser.add_argument('--ema', action='store_true', help='use ema model or not')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
@@ -86,8 +84,6 @@ def main():
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
-    if args.ema:
-        model = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(0.999))
     data = torch.load(args.model[0])
     model.load_state_dict(data['model_state_dict'])
 
