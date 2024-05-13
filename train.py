@@ -13,7 +13,7 @@ from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
-# parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
+parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
@@ -30,8 +30,8 @@ parser.add_argument('--resume', default=None, help='checkpoint to resume trainin
 parser.add_argument('--save_interval', type=int, default=10, help='interval for saving models (epochs)')
 parser.add_argument('--save_folder', default='weights', help='directory to save checkpoints')
 parser.add_argument('--patience', type=int, default=20, help='patience of early stopping')
-parser.add_argument('--min_delta', type=float, default=1, help='min delta of early stopping')
-parser.add_argument('--threshold', type=float, default=90, help='val mAP threshold of early stopping')
+parser.add_argument('--min_delta', type=float, default=0.5, help='min delta of early stopping')
+parser.add_argument('--threshold', type=float, default=95, help='val mAP threshold of early stopping')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
@@ -58,7 +58,7 @@ class EarlyStopper:
     
 def train(model, loader, crit, opt, sched, device):
     epoch_loss = 0
-    for i, batch in enumerate(loader):
+    for batch in loader:
         feats, feat_global, label = batch
 
         feats = feats.to(device)
@@ -76,8 +76,7 @@ def train(model, loader, crit, opt, sched, device):
     return epoch_loss / len(loader)
 
 def validate(model, dataset, loader, device):
-    num_test = len(dataset)
-    scores = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
+    scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
     model.eval()
     with torch.no_grad():
@@ -99,9 +98,9 @@ def validate(model, dataset, loader, device):
     return map_macro
 
 def main():
-    # np.random.seed(args.seed)
-    # torch.manual_seed(args.seed)
-    # torch.cuda.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
 
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)

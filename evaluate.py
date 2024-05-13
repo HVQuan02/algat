@@ -1,5 +1,6 @@
 import argparse
 import time
+import numpy as np
 import torch
 import sys
 from torch.utils.data import DataLoader
@@ -9,6 +10,7 @@ from utils import AP_partial, spearman_correlation
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
+parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
 parser.add_argument('model', nargs=1, help='trained model')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
@@ -32,7 +34,7 @@ def evaluate(model, dataset, loader, out_file, device):
     wid_global_list = []
     wid_local_list = []
     with torch.no_grad():
-        for i, batch in enumerate(loader):
+        for batch in loader:
             feats, feat_global, _, importances = batch
 
             # Run model with all frames
@@ -68,6 +70,10 @@ def evaluate(model, dataset, loader, out_file, device):
     return map, map_macro, spearman_global, spearman_local
 
 def main():
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+
     if args.dataset == 'cufed':
         dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False, ext_method=args.ext_method)
     else:
@@ -76,14 +82,15 @@ def main():
     device = torch.device('cuda:0')
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
+    model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
+    data = torch.load(args.model[0])
+    model.load_state_dict(data['model_state_dict'])
+
     if args.verbose:
         print("running on {}".format(device))
         print("num of test set = {}".format(len(dataset)))
         print("missing videos = {}".format(dataset.num_missing))
-
-    model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
-    data = torch.load(args.model[0])
-    model.load_state_dict(data['model_state_dict'])
+        print("model from epoch {}".format(data['epoch']))
 
     out_file = None
     if args.save_scores:
