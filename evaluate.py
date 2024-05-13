@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from datasets import CUFED
 from utils import AP_partial, spearman_correlation
 from model import ModelGCNConcAfter as Model
-from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn, update_bn
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', type=int, help='seed for randomness')
