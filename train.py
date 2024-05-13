@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from datasets import CUFED
 from utils import AP_partial
 from model import ModelGCNConcAfter as Model
+from torch.optim.swa_utils import AveragedModel, get_ema_multi_avg_fn, update_bn
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', type=int, help='seed for randomness')
@@ -56,7 +57,7 @@ class EarlyStopper:
                 return True, False
         return False, False
     
-def train(model, loader, crit, opt, sched, device):
+def train(ema_model, model, loader, crit, opt, sched, device):
     epoch_loss = 0
     for batch in loader:
         feats, feat_global, label = batch
@@ -70,6 +71,7 @@ def train(model, loader, crit, opt, sched, device):
         loss = crit(out_data, label)
         loss.backward()
         opt.step()
+        ema_model.update_parameters(model)
         epoch_loss += loss.item()
 
     sched.step()
@@ -124,6 +126,7 @@ def main():
 
     start_epoch = 0
     model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
+    ema_model = AveragedModel(model, multi_avg_fn=get_ema_multi_avg_fn(0.999))
     opt = optim.Adam(model.parameters(), lr=args.lr)
     crit = nn.BCEWithLogitsLoss()
     sched = optim.lr_scheduler.MultiStepLR(opt, milestones=args.milestones)
@@ -142,7 +145,7 @@ def main():
     model.train()
     for epoch in range(start_epoch, args.num_epochs):
         t0 = time.perf_counter()
-        train_loss = train(model, loader, crit, opt, sched, device)
+        train_loss = train(ema_model, model, loader, crit, opt, sched, device)
         t1 = time.perf_counter()
 
         t2 = time.perf_counter()
@@ -166,8 +169,14 @@ def main():
         if is_save_ckpt:
             torch.save(model_config, os.path.join(args.save_folder, 'best-ViGAT-{}.pt'.format(args.dataset)))
 
-        if is_early_stopping:
-            print('Early stop at epoch {}'.format(epoch_cnt)) 
+        if is_early_stopping or epoch_cnt == args.max_epochs:
+            # Update bn statistics for the ema_model at the end
+            update_bn(loader, ema_model)
+            torch.save({
+                'epoch': epoch_cnt,
+                'model_state_dict': ema_model.state_dict()
+            }, os.path.join(args.save_folder, 'EMA-ViGAT-{}.pt'.format(args.dataset)))
+            print('Stop at epoch {}'.format(epoch_cnt)) 
             break
 
         if args.verbose:
