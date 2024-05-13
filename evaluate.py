@@ -10,7 +10,7 @@ from utils import AP_partial, spearman_correlation
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
-parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
+parser.add_argument('--seed', type=int, help='seed for randomness')
 parser.add_argument('model', nargs=1, help='trained model')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
@@ -70,9 +70,10 @@ def evaluate(model, dataset, loader, out_file, device):
     return map, map_macro, spearman_global, spearman_local
 
 def main():
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
+    if args.seed:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        torch.cuda.manual_seed(args.seed)
 
     if args.dataset == 'cufed':
         dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False, ext_method=args.ext_method)
