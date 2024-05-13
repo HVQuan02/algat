@@ -13,14 +13,14 @@ from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
-parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
+parser.add_argument('--seed', type=int, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats-bb', help='global and local features directory')
 parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
-parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')
+parser.add_argument('--milestones', nargs="+", type=int, default=[50, 100, 150], help='milestones of learning decay')
 parser.add_argument('--num_epochs', type=int, default=200, help='number of epochs to train')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
@@ -98,9 +98,10 @@ def validate(model, dataset, loader, device):
     return map_macro
 
 def main():
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed(args.seed)
+    if args.seed:
+        np.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        torch.cuda.manual_seed(args.seed)
 
     if not os.path.exists(args.save_folder):
         os.mkdir(args.save_folder)
