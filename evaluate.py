@@ -6,7 +6,8 @@ import sys
 from torch.utils.data import DataLoader
 
 from datasets import CUFED
-from utils import AP_partial, spearman_correlation
+from utils import AP_partial, spearman_correlation, accuracy
+from sklearn.metrics import multilabel_confusion_matrix, classification_report
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
@@ -59,7 +60,13 @@ def evaluate(model, dataset, loader, out_file, device):
     
     # Change tensors to 1d-arrays
     scores = scores.numpy()
+
     map, map_macro = AP_partial(dataset.labels, scores)[1:3]
+
+    acc = accuracy(dataset.labels, scores)
+
+    cm = multilabel_confusion_matrix(dataset.labels, scores)
+    cr = classification_report(dataset.labels, scores)
     
     importance_matrix = torch.cat(importance_list).to(device)
     wid_global_matrix = torch.cat(wid_global_list).to(device)
@@ -67,7 +74,7 @@ def evaluate(model, dataset, loader, out_file, device):
     spearman_global = spearman_correlation(wid_global_matrix, importance_matrix)
     spearman_local = spearman_correlation(wid_local_matrix, importance_matrix)
 
-    return map, map_macro, spearman_global, spearman_local
+    return map, map_macro, acc, spearman_global, spearman_local, cm, cr
 
 def main():
     if args.seed:
@@ -98,13 +105,15 @@ def main():
         out_file = open(args.save_path, 'w')
 
     t0 = time.perf_counter()
-    map, map_macro, spearman_global, spearman_local = evaluate(model, dataset, loader, out_file, device)
+    map, map_macro, acc, spearman_global, spearman_local, cm, cr = evaluate(model, dataset, loader, out_file, device)
     t1 = time.perf_counter()
 
     if args.save_scores:
         out_file.close()
 
-    print('map={:.2f} map_macro={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, spearman_global, spearman_local, t1 - t0))
+    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc, spearman_global, spearman_local, t1 - t0))
+    print('confusion matrix: ', cm)
+    print('classification report: ', cr)
 
 if __name__ == '__main__':
     main()

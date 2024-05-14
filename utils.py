@@ -3,6 +3,9 @@ import torch
 
 epsilon = 1e-8
 
+def accuracy(targ, pred):
+    return np.mean(targ == pred)
+
 def average_precision(output, target):
     # sort examples
     indices = output.argsort()[::-1]
