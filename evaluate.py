@@ -2,6 +2,7 @@ import argparse
 import time
 import numpy as np
 import torch
+import torch.nn as nn
 import sys
 from torch.utils.data import DataLoader
 
@@ -9,6 +10,8 @@ from datasets import CUFED
 from utils import AP_partial, spearman_correlation, accuracy
 from sklearn.metrics import multilabel_confusion_matrix, classification_report
 from model import ModelGCNConcAfter as Model
+
+threshold = 0.8
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', type=int, help='seed for randomness')
@@ -58,15 +61,18 @@ def evaluate(model, dataset, loader, out_file, device):
             wid_global_list.append(torch.from_numpy(wids_frame_global))
             wid_local_list.append(torch.from_numpy(wids_frame_local))
     
-    # Change tensors to 1d-arrays
-    scores = scores.numpy()
+    m = nn.Softmax(dim=1)
+    preds = m(scores)
+    preds[preds >= threshold] = 1
+    preds[preds < threshold] = 0
+    scores, preds = scores.numpy(), preds.numpy()
 
     map, map_macro = AP_partial(dataset.labels, scores)[1:3]
 
-    acc = accuracy(dataset.labels, scores)
+    acc = accuracy(dataset.labels, preds)
 
-    cm = multilabel_confusion_matrix(dataset.labels, scores)
-    cr = classification_report(dataset.labels, scores)
+    cm = multilabel_confusion_matrix(dataset.labels, preds)
+    cr = classification_report(dataset.labels, preds)
     
     importance_matrix = torch.cat(importance_list).to(device)
     wid_global_matrix = torch.cat(wid_global_list).to(device)
@@ -111,9 +117,9 @@ def main():
     if args.save_scores:
         out_file.close()
 
-    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc, spearman_global, spearman_local, t1 - t0))
-    print('confusion matrix: ', cm)
-    print('classification report: ', cr)
+    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc*100, spearman_global, spearman_local, t1 - t0))
+    print('classification report:')
+    print(cr)
 
 if __name__ == '__main__':
     main()
