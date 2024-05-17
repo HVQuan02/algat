@@ -112,7 +112,7 @@ def main():
     else:
         sys.exit("Unknown dataset!")
 
-    device = torch.device('cuda:0')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
@@ -140,7 +140,6 @@ def main():
     early_stopper = EarlyStopper(patience=args.patience, min_delta=args.min_delta, threshold=args.threshold)
 
     model.train()
-    epoch_max = 0
     for epoch in range(start_epoch, args.num_epochs):
         epoch_cnt = epoch + 1
         
