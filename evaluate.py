@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from datasets import CUFED
 from utils import AP_partial, spearman_correlation, accuracy
-from sklearn.metrics import multilabel_confusion_matrix, classification_report
+from sklearn.metrics import multilabel_confusion_matrix, classification_report, ConfusionMatrixDisplay
 from model import ModelGCNConcAfter as Model
 
 threshold = 0.8
@@ -111,7 +111,9 @@ def main():
         out_file.close()
 
     print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc*100, spearman_global, spearman_local, t1 - t0))
-    print('classification report:')
+    print('-----confusion matrix-----')
+    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
+    print('-----classification report-----')
     print(cr)
 
 if __name__ == '__main__':
