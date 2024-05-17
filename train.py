@@ -113,7 +113,7 @@ def main():
         sys.exit("Unknown dataset!")
 
     device = torch.device('cuda:0')
-    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True)
+    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     if args.verbose:
