@@ -86,7 +86,7 @@ def main():
     else:
         sys.exit("Unknown dataset!")
 
-    device = torch.device('cuda:0')
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
