@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from datasets import CUFED
 from utils import AP_partial, spearman_correlation, accuracy
-from sklearn.metrics import multilabel_confusion_matrix, classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import multilabel_confusion_matrix, classification_report
 from model import ModelGCNConcAfter as Model
 
 threshold = 0.8
@@ -28,6 +28,14 @@ parser.add_argument('--save_path', default='scores.txt', help='output path')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
+def showCM(cms):
+    for i, cm in enumerate(cms):
+        print(f"Confusion Matrix for Class {i + 1}")
+        print("True \\ Pred", "  0  ", "  1  ")
+        print("     0      ", f"{cm[0, 0]:<5}", f"{cm[0, 1]:<5}")
+        print("     1      ", f"{cm[1, 0]:<5}", f"{cm[1, 1]:<5}")
+        print("\n" + "-" * 20 + "\n")
+        
 def evaluate(model, dataset, loader, out_file, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
@@ -69,7 +77,7 @@ def evaluate(model, dataset, loader, out_file, device):
 
     acc = accuracy(dataset.labels, preds)
 
-    cm = multilabel_confusion_matrix(dataset.labels, preds)
+    cms = multilabel_confusion_matrix(dataset.labels, preds)
     cr = classification_report(dataset.labels, preds)
     
     importance_matrix = torch.cat(importance_list).to(device)
@@ -78,7 +86,7 @@ def evaluate(model, dataset, loader, out_file, device):
     spearman_global = spearman_correlation(wid_global_matrix, importance_matrix)
     spearman_local = spearman_correlation(wid_local_matrix, importance_matrix)
 
-    return map, map_macro, acc, spearman_global, spearman_local, cm, cr
+    return map, map_macro, acc, spearman_global, spearman_local, cms, cr
 
 def main():
     if args.dataset == 'cufed':
@@ -104,17 +112,15 @@ def main():
         out_file = open(args.save_path, 'w')
 
     t0 = time.perf_counter()
-    map, map_macro, acc, spearman_global, spearman_local, cm, cr = evaluate(model, dataset, loader, out_file, device)
+    map, map_macro, acc, spearman_global, spearman_local, cms, cr = evaluate(model, dataset, loader, out_file, device)
     t1 = time.perf_counter()
 
     if args.save_scores:
         out_file.close()
 
     print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc*100, spearman_global, spearman_local, t1 - t0))
-    print('-----confusion matrix-----')
-    ConfusionMatrixDisplay(confusion_matrix=cm).plot()
-    print('-----classification report-----')
     print(cr)
+    showCM(cms)
 
 if __name__ == '__main__':
     main()
