@@ -42,6 +42,7 @@ def global_masked(args):
   dataset_root = os.path.join(datasets_root, 'CUFED')
   label_path = os.path.join(dataset_root, 'event_type.json')
   dataset_path = os.path.join(dataset_root, 'images')
+  album_imgs_path = '/kaggle/working/preprocess/album_imgs.json'
 
   with open(label_path, 'r') as f:
     album_types = json.load(f)
@@ -68,6 +69,9 @@ def global_masked(args):
   album_dataset = AlbumDataset(album_names)
   album_loader = DataLoader(album_dataset, batch_size=album_batch_size, num_workers=args.num_workers, collate_fn=my_collate)
 
+  with open(album_imgs_path, 'r') as json_file:
+    album_imgs_dict = json.load(json_file)
+
   for album_idx, albums in enumerate(album_loader):
     album = albums[0]
     
@@ -79,21 +83,30 @@ def global_masked(args):
     print(f"------Album {album_idx + 1}: {album}------")
 
     album_dir = os.path.join(dataset_path, album)
-    image_paths = [os.path.join(album_dir, filename) for filename in os.listdir(album_dir)]
+    image_names = os.listdir(album_dir)
+    image_paths = [os.path.join(album_dir, image_name) for image_name in image_names]
 
     # vit_global_processor
     with torch.no_grad():
       inputs = processor(text=album_types[album], images=[Image.open(image_path) for image_path in image_paths], 
                              return_tensors="pt", padding=True)
       outputs = model(**inputs.to(device))
-    sims = outputs.logits_per_image.cpu().numpy().mean(axis=1) # test
+    sims = outputs.logits_per_image.cpu().numpy().mean(axis=1)
     feat = outputs.image_embeds.cpu().numpy()
     selected_feat = np.zeros((args.sample_size, feat.shape[1]), dtype=np.float32)
     top_sims = np.argsort(sims)[-args.sample_size:][::-1]
+
     for i, idx in enumerate(top_sims):
       selected_feat[i] = feat[idx]
-    print('feats: ', selected_feat.shape, selected_feat.dtype)
     np.save(os.path.join(args.save_dir, f"{album}.npy"), selected_feat)
+
+    # get selected images of albums
+    if album in album_imgs_dict:
+      continue
+    image_names_without_extension = np.char.replace(image_names, '.jpg', '')
+    album_imgs_dict[album] = image_names_without_extension[top_sims]
+    with open(album_imgs_path, 'w') as json_file:
+      json.dump(album_imgs_dict, json_file)
 
 def main():
   global_masked(args)
