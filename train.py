@@ -13,7 +13,7 @@ from utils import AP_partial
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
-parser.add_argument('--seed', type=int, help='seed for randomness')
+parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
 parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
@@ -25,7 +25,6 @@ parser.add_argument('--num_epochs', type=int, default=200, help='number of epoch
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
-parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--resume', default=None, help='checkpoint to resume training')
 parser.add_argument('--save_interval', type=int, default=10, help='interval for saving models (epochs)')
 parser.add_argument('--save_folder', default='weights', help='directory to save checkpoints')
@@ -34,6 +33,7 @@ parser.add_argument('--min_delta', type=float, default=0.5, help='min delta of e
 parser.add_argument('--threshold', type=float, default=95, help='val mAP threshold of early stopping')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
+
 
 class EarlyStopper:
     def __init__(self, patience, min_delta, threshold):
@@ -55,7 +55,8 @@ class EarlyStopper:
             if self.counter > self.patience:
                 return True, False
         return False, False
-    
+
+
 def train(model, loader, crit, opt, sched, device):
     epoch_loss = 0
     for batch in loader:
@@ -75,7 +76,8 @@ def train(model, loader, crit, opt, sched, device):
     sched.step()
     return epoch_loss / len(loader)
 
-def validate(ema_model, model, dataset, loader, device):
+
+def validate(model, dataset, loader, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
     model.eval()
@@ -97,6 +99,7 @@ def validate(ema_model, model, dataset, loader, device):
     map_macro = AP_partial(dataset.labels, scores)[2]
     return map_macro
 
+
 def main():
     if args.seed:
         np.random.seed(args.seed)
@@ -107,8 +110,8 @@ def main():
         os.mkdir(args.save_folder)
 
     if args.dataset == 'cufed':
-        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, ext_method=args.ext_method)
-        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, is_val=True, ext_method=args.ext_method)
+        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True)
+        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, is_val=True)
     else:
         sys.exit("Unknown dataset!")
 
@@ -120,7 +123,6 @@ def main():
         print("running on {}".format(device))
         print("num of train set = {}".format(len(dataset)))
         print("num of val set = {}".format(len(val_dataset)))
-        print("missing videos = {}".format(dataset.num_missing))
 
     start_epoch = 0
     model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
@@ -172,6 +174,7 @@ def main():
 
         if args.verbose:
             print("[epoch {}] train_loss={} val_mAP={} dt_train={:.2f}sec dt_val={:.2f}sec dt={:.2f}sec".format(epoch_cnt, train_loss, val_mAP, t1 - t0, t3 - t2, t1 - t0 + t3 - t2))
+
 
 if __name__ == '__main__':
     main()

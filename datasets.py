@@ -1,6 +1,5 @@
 import os
 import json
-import sys
 import numpy as np
 from torch.utils.data import Dataset
 
@@ -24,7 +23,7 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False, ext_method='VIT'):
+    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False):
         self.root_dir = root_dir
         self.feats_dir = feats_dir
         
@@ -36,23 +35,15 @@ class CUFED(Dataset):
         else:
             self.phase = 'test'
             
-        if ext_method == 'VIT':
-            self.local_folder = 'vit_local'
-            self.global_folder = 'vit_global'
-            self.NUM_FEATS = 768
-        elif ext_method == 'RESNET':
-            self.local_folder = 'R152_local'
-            self.global_folder = 'R152_global'
-            self.NUM_FEATS = 2048
-        else:
-            sys.exit("Unknown Extractor")
+        self.local_folder = 'vit_local'
+        self.global_folder = 'vit_global'
+        self.NUM_FEATS = 768
 
         if self.phase == 'train':
             split_path = os.path.join(split_dir, 'train_split.txt')
         else:
             split_path = os.path.join(split_dir, 'val_split.txt')
 
-        vidname_list = []
         label_path = os.path.join(root_dir, "event_type.json")
         with open(label_path, 'r') as f:
           album_data = json.load(f)
@@ -73,8 +64,7 @@ class CUFED(Dataset):
             album_names = f.readlines()
         vidname_list = [name.strip() for name in album_names]
 
-        length = len(vidname_list)
-        labels_np = np.zeros((length, self.NUM_CLASS), dtype=np.float32)
+        labels_np = np.zeros((len(vidname_list), self.NUM_CLASS), dtype=np.float32)
         for i, vidname in enumerate(vidname_list):
             for lbl in album_data[vidname]:
                 idx = self.event_labels.index(lbl)
@@ -83,21 +73,22 @@ class CUFED(Dataset):
         self.labels = labels_np
         self.videos = vidname_list
 
-        self.num_missing = 0  # no missing videos by default!!
-
     def __len__(self):
         return len(self.videos)
 
     def __getitem__(self, idx):
         name = self.videos[idx]
-        feats_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
+        local_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
         global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
-        feats = np.load(feats_path)
+
+        feat_local = np.load(local_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
+
         if self.phase == 'test':
             album_importance = self.importance[name]
             album_imgs = self.album_imgs[name]
             importances = get_album_importance(album_imgs, album_importance)
-            return feats, feat_global, label, importances
-        return feats, feat_global, label
+            return feat_local, feat_global, label, importances
+        
+        return feat_local, feat_global, label
