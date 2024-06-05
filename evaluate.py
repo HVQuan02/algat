@@ -4,13 +4,14 @@ import torch
 import torch.nn as nn
 import sys
 from torch.utils.data import DataLoader
-
 from datasets import CUFED
 from utils import AP_partial, spearman_correlation, accuracy
 from sklearn.metrics import multilabel_confusion_matrix, classification_report
 from model import ModelGCNConcAfter as Model
 
+
 threshold = 0.8
+
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('model', nargs=1, help='trained model')
@@ -20,13 +21,12 @@ parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED'
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats-bb', help='global and local features directory')
 parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
-parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=2, help='number of workers for data loader')
-parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
+
 
 def showCM(cms):
     for i, cm in enumerate(cms):
@@ -36,6 +36,7 @@ def showCM(cms):
         print("     1      ", f"{cm[1, 0]:<5}", f"{cm[1, 1]:<5}")
         print("\n" + "-" * 20 + "\n")
         
+
 def evaluate(model, dataset, loader, out_file, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
     gidx = 0
@@ -88,9 +89,10 @@ def evaluate(model, dataset, loader, out_file, device):
 
     return map, map_macro, acc, spearman_global, spearman_local, cms, cr
 
+
 def main():
     if args.dataset == 'cufed':
-        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False, ext_method=args.ext_method)
+        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False)
     else:
         sys.exit("Unknown dataset!")
 
@@ -104,7 +106,6 @@ def main():
     if args.verbose:
         print("running on {}".format(device))
         print("num of test set = {}".format(len(dataset)))
-        print("missing videos = {}".format(dataset.num_missing))
         print("model from epoch {}".format(data['epoch']))
 
     out_file = None
@@ -121,6 +122,7 @@ def main():
     print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc*100, spearman_global, spearman_local, t1 - t0))
     print(cr)
     showCM(cms)
+
 
 if __name__ == '__main__':
     main()
