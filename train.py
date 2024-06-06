@@ -20,7 +20,7 @@ parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED'
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats-bb', help='global and local features directory')
 parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--lr', type=float, default=1e-4, help='initial learning rate')
-parser.add_argument('--milestones', nargs="+", type=int, default=[50, 100, 150], help='milestones of learning decay')
+parser.add_argument('--milestones', nargs="+", type=int, default=[110, 160], help='milestones of learning decay')
 parser.add_argument('--num_epochs', type=int, default=200, help='number of epochs to train')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
@@ -76,24 +76,17 @@ def train(model, loader, crit, opt, sched, device):
 
 
 def validate(model, dataset, loader, device):
-    scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
+    scores = np.zeros((len(dataset), dataset.NUM_CLASS), dtype=np.float32)
     gidx = 0
     model.eval()
     with torch.no_grad():
-        for batch in loader:
-            feats, feat_global, _ = batch
-
-            # Run model with all frames
+        for feats, feat_global, _ in loader:
             feats = feats.to(device)
             feat_global = feat_global.to(device)
             out_data = model(feats, feat_global, device)
-
             shape = out_data.shape[0]
-
             scores[gidx:gidx+shape, :] = out_data.cpu()
             gidx += shape
-    # Change tensors to 1d-arrays
-    scores = scores.numpy()
     map_macro = AP_partial(dataset.labels, scores)[2]
     return map_macro
 
