@@ -41,8 +41,10 @@ class CUFED(Dataset):
 
         if self.phase == 'train':
             split_path = os.path.join(split_dir, 'train_split.txt')
-        else:
+        elif self.phase == 'test':
             split_path = os.path.join(split_dir, 'val_split.txt')
+        else:
+            split_path = os.path.join(split_dir, 'test_split.txt')
 
         label_path = os.path.join(root_dir, "event_type.json")
         with open(label_path, 'r') as f:

@@ -101,22 +101,22 @@ def main():
         os.mkdir(args.save_folder)
 
     if args.dataset == 'cufed':
-        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True)
+        train_dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True)
         val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, is_val=True)
     else:
         sys.exit("Unknown dataset!")
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, num_workers=args.num_workers)
 
     if args.verbose:
         print("running on {}".format(device))
-        print("num of train set = {}".format(len(dataset)))
+        print("num of train set = {}".format(len(train_dataset)))
         print("num of val set = {}".format(len(val_dataset)))
 
     start_epoch = 0
-    model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
+    model = Model(args.gcn_layers, train_dataset.NUM_FEATS, train_dataset.NUM_CLASS).to(device)
     opt = optim.Adam(model.parameters(), lr=args.lr)
     crit = nn.BCEWithLogitsLoss()
     sched = optim.lr_scheduler.MultiStepLR(opt, milestones=args.milestones)
@@ -137,7 +137,7 @@ def main():
         epoch_cnt = epoch + 1
         
         t0 = time.perf_counter()
-        train_loss = train(model, loader, crit, opt, sched, device)
+        train_loss = train(model, train_loader, crit, opt, sched, device)
         t1 = time.perf_counter()
 
         t2 = time.perf_counter()
