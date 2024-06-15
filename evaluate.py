@@ -9,9 +9,7 @@ from utils import AP_partial, spearman_correlation, accuracy
 from sklearn.metrics import multilabel_confusion_matrix, classification_report
 from model import ModelGCNConcAfter as Model
 
-
 threshold = 0.8
-
 
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('model', nargs=1, help='trained model')
@@ -27,7 +25,6 @@ parser.add_argument('--save_path', default='scores.txt', help='output path')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
-
 def showCM(cms):
     for i, cm in enumerate(cms):
         print(f"Confusion Matrix for Class {i + 1}")
@@ -35,7 +32,6 @@ def showCM(cms):
         print("     0      ", f"{cm[0, 0]:<5}", f"{cm[0, 1]:<5}")
         print("     1      ", f"{cm[1, 0]:<5}", f"{cm[1, 1]:<5}")
         print("\n" + "-" * 20 + "\n")
-        
 
 def evaluate(model, dataset, loader, out_file, device):
     scores = torch.zeros((len(dataset), dataset.NUM_CLASS), dtype=torch.float32)
@@ -88,7 +84,6 @@ def evaluate(model, dataset, loader, out_file, device):
     spearman_local = spearman_correlation(wid_local_matrix, importance_matrix)
 
     return map, map_macro, acc, spearman_global, spearman_local, cms, cr
-
 
 def main():
     if args.dataset == 'cufed':
