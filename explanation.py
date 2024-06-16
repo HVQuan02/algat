@@ -1,26 +1,21 @@
 import argparse
-import time
 import torch
 import sys
 from torch.utils.data import DataLoader
-
 import numpy as np
 import torch.nn as nn
-import torch.nn.functional as F
-from sklearn.preprocessing import MinMaxScaler
-
-from datasets import FCVID, miniKINETICS, ACTNET
+from datasets import CUFED
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Video Classification')
 parser.add_argument('model', nargs=1, help='trained model')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
-parser.add_argument('--dataset', default='actnet', choices=['fcvid', 'minikinetics', 'actnet'])
-parser.add_argument('--dataset_root', default='/home/dimidask/Projects/ActivityNet120', help='dataset root directory')
+parser.add_argument('--dataset', default='cufed', choices=['cufed', 'pec'])
+parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
+parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
+parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
 parser.add_argument('--batch_size', type=int, default=64, help='batch size')
-parser.add_argument('--num_objects', type=int, default=50, help='number of objects with best DoC')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
-parser.add_argument('--ext_method', default='VIT', choices=['VIT', 'RESNET'], help='Extraction method for features')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 parser.add_argument('--frames', type=int, default=5, help='Number of frames for Metrics')
 args = parser.parse_args()
@@ -28,10 +23,9 @@ args = parser.parse_args()
 
 def metrics_run(model,  dataset, loader, scores, scores_bestframes, scores_worstframes, device):
     gidx = 0
-
     model.eval()
     with torch.no_grad():
-        for i, batch in enumerate(loader):
+        for batch in loader:
             feats, feat_global, _, _ = batch
 
             # Run model with all frames
@@ -61,33 +55,6 @@ def metrics_run(model,  dataset, loader, scores, scores_bestframes, scores_worst
             scores_worstframes[gidx:gidx + shape, :] = out_data_worstframes.cpu()
 
             gidx += shape
-
-
-def main():
-    if args.dataset == 'fcvid':
-        dataset = FCVID(args.dataset_root, is_train=False, ext_method=args.ext_method)
-    elif args.dataset == 'actnet':
-        dataset = ACTNET(args.dataset_root, is_train=False, ext_method=args.ext_method)
-    elif args.dataset == 'minikinetics':
-        dataset = miniKINETICS(args.dataset_root, is_train=False, ext_method=args.ext_method)
-    else:
-        sys.exit("Unknown dataset!")
-    device = torch.device('cuda:0')
-    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
-
-    model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
-    data = torch.load(args.model[0])
-    model.load_state_dict(data['model_state_dict'])
-
-    num_test = len(dataset)
-    scores = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
-    scores_bestframes = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
-    scores_worstframes = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
-
-    metrics_run(model, dataset, loader, scores, scores_bestframes, scores_worstframes, device)
-
-    # Compute and Print Metrics
-    computemetrics(scores, scores_bestframes, scores_worstframes, dataset.labels)
 
 
 def increaseconfclass(scores_y, scores_o):
@@ -185,6 +152,30 @@ def computemetrics(scores, scores_bestframes, scores_worstframes, labels):
 
     print("Fidelity Plus: {:.2f} %".format(fidelityp * 100))
     print("Fidelity Minus: {:.2f} %".format(fidelitym * 100))
+
+
+def main():
+    if args.dataset == 'cufed':
+        dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False)
+    else:
+        sys.exit("Unknown dataset!")
+
+    device = torch.device('cuda:0')
+    loader = DataLoader(dataset, batch_size=args.batch_size, num_workers=args.num_workers)
+
+    model = Model(args.gcn_layers, dataset.NUM_FEATS, dataset.NUM_CLASS).to(device)
+    data = torch.load(args.model[0])
+    model.load_state_dict(data['model_state_dict'])
+
+    num_test = len(dataset)
+    scores = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
+    scores_bestframes = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
+    scores_worstframes = torch.zeros((num_test, dataset.NUM_CLASS), dtype=torch.float32)
+
+    metrics_run(model, dataset, loader, scores, scores_bestframes, scores_worstframes, device)
+
+    # Compute and Print Metrics
+    computemetrics(scores, scores_bestframes, scores_worstframes, dataset.labels)
 
 
 if __name__ == '__main__':
