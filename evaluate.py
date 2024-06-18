@@ -1,5 +1,6 @@
 import argparse
 import time
+import numpy as np
 import torch
 import torch.nn as nn
 import sys
@@ -40,9 +41,8 @@ def evaluate(model, dataset, loader, out_file, device):
             feats = feats.to(device)
             feat_global = feat_global.to(device)
             out_data, wids_objects, wids_frame_local, wids_frame_global = model(feats, feat_global, device, get_adj=True)
-
             shape = out_data.shape[0]
-
+            
             if out_file:
                 for j in range(shape):
                     video_name = dataset.videos[gidx + j]
@@ -55,9 +55,9 @@ def evaluate(model, dataset, loader, out_file, device):
             importance_list.append(importances)
             avg_frame_wid = (wids_frame_local + wids_frame_global) / 2
             frame_wid_list.append(torch.from_numpy(avg_frame_wid))
-            obj_wid_list.append(torch.from_numpy(wids_objects))
+            obj_wid_list.append(torch.from_numpy(np.reshape(wids_objects.mean(axis=1), (shape, -1))))
     
-    m = nn.Sigmoid(dim=1)
+    m = nn.Sigmoid()
     preds = m(scores)
     preds[preds >= args.threshold] = 1
     preds[preds < args.threshold] = 0
@@ -101,13 +101,13 @@ def main():
         out_file = open(args.save_path, 'w')
 
     t0 = time.perf_counter()
-    map, map_macro, acc, spearman_global, spearman_local, cms, cr = evaluate(model, dataset, loader, out_file, device)
+    map_micro, map_macro, acc, spearman_global, spearman_local, cms, cr = evaluate(model, dataset, loader, out_file, device)
     t1 = time.perf_counter()
 
     if args.save_scores:
         out_file.close()
 
-    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc * 100, spearman_global, spearman_local, t1 - t0))
+    print('map_micro={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map_micro, map_macro, acc * 100, spearman_global, spearman_local, t1 - t0))
     print(cr)
     showCM(cms)
 
