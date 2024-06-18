@@ -20,7 +20,7 @@ parser.add_argument('--batch_size', type=int, default=64, help='batch size')
 parser.add_argument('--num_workers', type=int, default=4, help='number of workers for data loader')
 parser.add_argument('--save_scores', action='store_true', help='save the output scores')
 parser.add_argument('--save_path', default='scores.txt', help='output path')
-parser.add_argument('--threshold', type=float, default=0.8, help='threshold for logits to labels')
+parser.add_argument('--threshold', type=float, default=0.75, help='threshold for logits to labels')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
 
@@ -57,7 +57,7 @@ def evaluate(model, dataset, loader, out_file, device):
             frame_wid_list.append(torch.from_numpy(avg_frame_wid))
             obj_wid_list.append(torch.from_numpy(wids_objects))
     
-    m = nn.Softmax(dim=1)
+    m = nn.Sigmoid(dim=1)
     preds = m(scores)
     preds[preds >= args.threshold] = 1
     preds[preds < args.threshold] = 0
@@ -107,7 +107,7 @@ def main():
     if args.save_scores:
         out_file.close()
 
-    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc*100, spearman_global, spearman_local, t1 - t0))
+    print('map={:.2f} map_macro={:.2f} accuracy={:.2f} spearman_global={:.2f} spearman_local={:.2f} dt={:.2f}sec'.format(map, map_macro, acc * 100, spearman_global, spearman_local, t1 - t0))
     print(cr)
     showCM(cms)
 

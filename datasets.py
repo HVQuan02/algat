@@ -3,15 +3,6 @@ import json
 import numpy as np
 from torch.utils.data import Dataset
 
-def get_album_importance(album_imgs, album_importance):
-    img_score_dict = {}
-    for _, image, score in album_importance:
-        img_score_dict[image] = score
-    importances = np.zeros(len(album_imgs))
-    for i, image in enumerate(album_imgs):
-        importances[i] = img_score_dict[image]
-    return importances
-
 class CUFED(Dataset):
     NUM_CLASS = 23
     NUM_FRAMES = 30
@@ -23,6 +14,15 @@ class CUFED(Dataset):
                     'PersonalArtActivity', 'PersonalMusicActivity', 'PersonalSports',
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
+
+    def get_album_importance(self, album_imgs, album_importance):
+        img_score_dict = {}
+        for _, image, score in album_importance:
+            img_score_dict[image] = score
+        importances = np.zeros(len(album_imgs))
+        for i, image in enumerate(album_imgs):
+            importances[i] = img_score_dict[image]
+        return importances
 
     def __init__(self, root_dir, feats_dir, split_dir, is_train=True):
         self.root_dir = root_dir
@@ -77,6 +77,7 @@ class CUFED(Dataset):
         name = self.videos[idx]
         local_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
         global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
+
         feat_local = np.load(local_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
@@ -84,7 +85,7 @@ class CUFED(Dataset):
         if self.phase == 'test':
             album_importance = self.importance[name]
             album_imgs = self.album_imgs[name]
-            importances = get_album_importance(album_imgs, album_importance)
+            importances = self.get_album_importance(album_imgs, album_importance)
             return feat_local, feat_global, label, importances
         
         return feat_local, feat_global, label
