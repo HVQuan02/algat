@@ -113,3 +113,11 @@ def spearman_correlation(x, y):
 #     x, y = rankmin(x), rankmin(y)
 #     cor_batch = corrcoef(x, y)
 #     return torch.mean(cor_batch).item()
+
+def showCM(cms):
+    for i, cm in enumerate(cms):
+        print(f"Confusion Matrix for Class {i + 1}")
+        print("True \\ Pred", "  0  ", "  1  ")
+        print("     0      ", f"{cm[0, 0]:<5}", f"{cm[0, 1]:<5}")
+        print("     1      ", f"{cm[1, 0]:<5}", f"{cm[1, 1]:<5}")
+        print("\n" + "-" * 20 + "\n")

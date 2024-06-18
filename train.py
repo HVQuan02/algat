@@ -7,7 +7,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-
 from datasets import CUFED
 from utils import AP_partial
 from model import ModelGCNConcAfter as Model
@@ -15,7 +14,7 @@ from model import ModelGCNConcAfter as Model
 parser = argparse.ArgumentParser(description='GCN Album Classification')
 parser.add_argument('--seed', type=int, default=2024, help='seed for randomness')
 parser.add_argument('--gcn_layers', type=int, default=2, help='number of gcn layers')
-parser.add_argument('--dataset', default='cufed', choices=['holidays', 'pec', 'cufed'])
+parser.add_argument('--dataset', default='cufed', choices=['pec', 'cufed'])
 parser.add_argument('--dataset_root', default='/kaggle/input/thesis-cufed/CUFED', help='dataset root directory')
 parser.add_argument('--feats_dir', default='/kaggle/input/cufed-feats', help='global and local features directory')
 parser.add_argument('--split_dir', default='/kaggle/input/cufed-full-split', help='train split and val split')
@@ -31,7 +30,6 @@ parser.add_argument('--min_delta', type=float, default=0.5, help='min delta of e
 parser.add_argument('--threshold', type=float, default=95, help='val mAP threshold of early stopping')
 parser.add_argument('-v', '--verbose', action='store_true', help='show details')
 args = parser.parse_args()
-
 
 class EarlyStopper:
     def __init__(self, patience, min_delta, threshold):
@@ -54,7 +52,6 @@ class EarlyStopper:
                 return True, False
         return False, False
 
-
 def train(model, loader, crit, opt, sched, device):
     epoch_loss = 0
     for batch in loader:
@@ -74,13 +71,12 @@ def train(model, loader, crit, opt, sched, device):
     sched.step()
     return epoch_loss / len(loader)
 
-
 def validate(model, dataset, loader, device):
     scores = np.zeros((len(dataset), dataset.NUM_CLASS), dtype=np.float32)
     gidx = 0
     model.eval()
     with torch.no_grad():
-        for feats, feat_global, _ in loader:
+        for feats, feat_global, _, _ in loader:
             feats = feats.to(device)
             feat_global = feat_global.to(device)
             out_data = model(feats, feat_global, device)
@@ -89,7 +85,6 @@ def validate(model, dataset, loader, device):
             gidx += shape
     map_macro = AP_partial(dataset.labels, scores)[2]
     return map_macro
-
 
 def main():
     if args.seed:
@@ -101,8 +96,8 @@ def main():
         os.mkdir(args.save_folder)
 
     if args.dataset == 'cufed':
-        train_dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True)
-        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=True, is_val=True)
+        train_dataset = CUFED(root_dir=args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir)
+        val_dataset = CUFED(args.dataset_root, feats_dir=args.feats_dir, split_dir=args.split_dir, is_train=False)
     else:
         sys.exit("Unknown dataset!")
 
@@ -141,10 +136,10 @@ def main():
         t1 = time.perf_counter()
 
         t2 = time.perf_counter()
-        val_mAP = validate(model, val_dataset, val_loader, device)
+        val_map = validate(model, val_dataset, val_loader, device)
         t3 = time.perf_counter()
 
-        is_early_stopping, is_save_ckpt = early_stopper.early_stop(val_mAP)
+        is_early_stopping, is_save_ckpt = early_stopper.early_stop(val_map)
 
         model_config = {
             'epoch': epoch_cnt,
@@ -154,17 +149,17 @@ def main():
             'sched_state_dict': sched.state_dict()
         }
 
-        torch.save(model_config, os.path.join(args.save_folder, 'last-ViGAT-{}.pt'.format(args.dataset)))
+        torch.save(model_config, os.path.join(args.save_folder, 'last-vigat-{}.pt'.format(args.dataset)))
 
         if is_save_ckpt:
-            torch.save(model_config, os.path.join(args.save_folder, 'best-ViGAT-{}.pt'.format(args.dataset)))
+            torch.save(model_config, os.path.join(args.save_folder, 'best-vigat-{}.pt'.format(args.dataset)))
 
         if is_early_stopping:
             print('Stop at epoch {}'.format(epoch_cnt)) 
             break
 
         if args.verbose:
-            print("[epoch {}] train_loss={} val_mAP={} dt_train={:.2f}sec dt_val={:.2f}sec dt={:.2f}sec".format(epoch_cnt, train_loss, val_mAP, t1 - t0, t3 - t2, t1 - t0 + t3 - t2))
+            print("[epoch {}] train_loss={} val_map={} dt_train={:.2f}sec dt_val={:.2f}sec dt={:.2f}sec".format(epoch_cnt, train_loss, val_map, t1 - t0, t3 - t2, t1 - t0 + t3 - t2))
 
 
 if __name__ == '__main__':

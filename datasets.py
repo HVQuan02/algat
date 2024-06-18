@@ -16,6 +16,7 @@ class CUFED(Dataset):
     NUM_CLASS = 23
     NUM_FRAMES = 30
     NUM_BOXES = 50
+    NUM_FEATS = 768
     event_labels = ['Architecture', 'BeachTrip', 'Birthday', 'BusinessActivity',
                     'CasualFamilyGather', 'Christmas', 'Cruise', 'Graduation',
                     'GroupActivity', 'Halloween', 'Museum', 'NatureTrip',
@@ -23,29 +24,27 @@ class CUFED(Dataset):
                     'Protest', 'ReligiousActivity', 'Show', 'Sports', 'ThemePark',
                     'UrbanTrip', 'Wedding', 'Zoo']
 
-    def __init__(self, root_dir, feats_dir, split_dir, is_train, is_val=False):
+    def __init__(self, root_dir, feats_dir, split_dir, is_train=True):
         self.root_dir = root_dir
         self.feats_dir = feats_dir
         
         if is_train:
-            if is_val:
-                self.phase = 'val'
-            else:
-                self.phase = 'train'
+            self.phase = 'train'
         else:
             self.phase = 'test'
             
         self.local_folder = 'vit_local'
         self.global_folder = 'vit_global'
-        self.NUM_FEATS = 768
 
         if self.phase == 'train':
             split_path = os.path.join(split_dir, 'train_split.txt')
-        elif self.phase == 'val':
-            split_path = os.path.join(split_dir, 'val_split.txt')
         else:
             split_path = os.path.join(split_dir, 'test_split.txt')
 
+        with open(split_path, 'r') as f:
+            album_names = f.readlines()
+        vidname_list = [name.strip() for name in album_names]
+        
         label_path = os.path.join(root_dir, "event_type.json")
         with open(label_path, 'r') as f:
           album_data = json.load(f)
@@ -61,10 +60,6 @@ class CUFED(Dataset):
                 
             self.importance = album_importance
             self.album_imgs = album_imgs
-
-        with open(split_path, 'r') as f:
-            album_names = f.readlines()
-        vidname_list = [name.strip() for name in album_names]
 
         labels_np = np.zeros((len(vidname_list), self.NUM_CLASS), dtype=np.float32)
         for i, vidname in enumerate(vidname_list):
@@ -82,7 +77,6 @@ class CUFED(Dataset):
         name = self.videos[idx]
         local_path = os.path.join(self.feats_dir, self.local_folder, name + '.npy')
         global_path = os.path.join(self.feats_dir, self.global_folder, name + '.npy')
-
         feat_local = np.load(local_path)
         feat_global = np.load(global_path)
         label = self.labels[idx, :]
