@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
+
 
 class GCNLayer(nn.Module):
     def __init__(self, in_feats, out_feats):
@@ -106,10 +106,8 @@ class ModelGCNConcAfterGlobalOnly(nn.Module):
         self.cls = ClassifierSimple(num_feats, int(num_feats/2), num_class)
 
     def forward(self, feats, feat_global, device):
-
         x = self.graph(feat_global, device)
         x = self.cls(x, device)
-
         return x
 
 

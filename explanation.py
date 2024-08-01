@@ -4,7 +4,7 @@ import sys
 from torch.utils.data import DataLoader
 import numpy as np
 import torch.nn as nn
-from datasets import CUFED
+from dataset import CUFED
 from model import ModelGCNConcAfter as Model
 
 parser = argparse.ArgumentParser(description='GCN Video Classification')

@@ -3,6 +3,7 @@ import json
 import numpy as np
 from torch.utils.data import Dataset
 
+
 class CUFED(Dataset):
     NUM_CLASS = 23
     NUM_FRAMES = 30
@@ -49,6 +50,15 @@ class CUFED(Dataset):
         with open(label_path, 'r') as f:
           album_data = json.load(f)
 
+        labels_np = np.zeros((len(vidname_list), self.NUM_CLASS), dtype=np.float32)
+        for i, vidname in enumerate(vidname_list):
+            for lbl in album_data[vidname]:
+                idx = self.event_labels.index(lbl)
+                labels_np[i, idx] = 1
+
+        self.labels = labels_np
+        self.videos = vidname_list
+
         if self.phase == 'test':
             importance_path = os.path.join(root_dir, "image_importance.json")
             with open(importance_path, 'r') as f:
@@ -60,15 +70,6 @@ class CUFED(Dataset):
                 
             self.importance = album_importance
             self.album_imgs = album_imgs
-
-        labels_np = np.zeros((len(vidname_list), self.NUM_CLASS), dtype=np.float32)
-        for i, vidname in enumerate(vidname_list):
-            for lbl in album_data[vidname]:
-                idx = self.event_labels.index(lbl)
-                labels_np[i, idx] = 1
-
-        self.labels = labels_np
-        self.videos = vidname_list
 
     def __len__(self):
         return len(self.videos)
@@ -85,7 +86,7 @@ class CUFED(Dataset):
         if self.phase == 'test':
             album_importance = self.importance[name]
             album_imgs = self.album_imgs[name]
-            importances = self.get_album_importance(album_imgs, album_importance)
-            return feat_local, feat_global, label, importances
+            importance = self.get_album_importance(album_imgs, album_importance)
+            return feat_local, feat_global, label, importance
         
         return feat_local, feat_global, label

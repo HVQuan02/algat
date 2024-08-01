@@ -3,6 +3,7 @@ import torch
 
 epsilon = 1e-8
 
+
 def average_precision(output, target):
     # sort examples
     indices = output.argsort()[::-1]
@@ -19,6 +20,7 @@ def average_precision(output, target):
     precision_at_i = precision_at_i_ / (total + epsilon)
 
     return precision_at_i
+
 
 def AP_partial(targs, preds):
     """Returns the model's average precision for each class
@@ -72,6 +74,7 @@ def AP_partial(targs, preds):
 
     return ap, map, map_macro, cnt_class_with_no_labels, cnt_class_with_no_neg, cnt_class_with_no_pos
 
+
 def rankmin(x):
   rank = torch.arange(x.shape[1]).type(x.dtype).to(x.device)
   ranks = torch.zeros_like(x).to(x.device)
@@ -79,6 +82,7 @@ def rankmin(x):
     tmp = x[i].argsort()
     ranks[i, tmp] = rank
   return ranks
+
 
 def spearman_correlation(x, y):
     x_rank = rankmin(x)
@@ -89,12 +93,14 @@ def spearman_correlation(x, y):
     down = n * (n ** 2 - 1.0)
     return torch.mean(1.0 - (upper / down)).item()
 
+
 # def cov(m):
 #     m = m.type(torch.double)  # uncomment this line if desired
 #     fact = 1.0 / (m.shape[-1] - 1)  # 1 / N
 #     m -= torch.mean(m, dim=(1, 2), keepdim=True)
 #     mt = torch.transpose(m, 1, 2)  # if complex: mt = m.t().conj()
 #     return fact * m.matmul(mt).squeeze()
+
 
 # def corrcoef(x, y):
 #     batch_size = x.shape[0]
@@ -109,10 +115,12 @@ def spearman_correlation(x, y):
 #     c = c.div(torch.transpose(stddev, 1, 2))
 #     return c[:, 1, 0]
 
+
 # def compute_rank_correlation(x, y):
 #     x, y = rankmin(x), rankmin(y)
 #     cor_batch = corrcoef(x, y)
 #     return torch.mean(cor_batch).item()
+
 
 def showCM(cms):
     for i, cm in enumerate(cms):
